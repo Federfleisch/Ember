@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ember, sauces piquantes fumées</title>
+<meta name="description" content="Ember, concept de sauces piquantes fumées au feu de bois. Trois sauces, cinq niveaux de feu, une seule braise.">
+<meta name="theme-color" content="#0c0a09">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0a09'/%3E%3Cpath d='M16 4c1 5 7 8 7 14a7 7 0 0 1-14 0c0-3 2-5 3-7 .5 2 1.500 3 2.500 3C14 10 15 7 16 4z' fill='%23f97316'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/*
+  Design decisions (Kholmatova: functional vs perceptual patterns)
+  - Tokens map to Tailwind: stone neutrals, ONE accent (orange), 4px spacing scale.
+  - Perceptual: dark, warm, smoky. Serif display (Fraunces) against neutral UI sans (Inter).
+  - Motion: embers rise slowly, reveals are 600ms ease-out, everything off under prefers-reduced-motion.
+  - 60-30-10: 60% stone-950/900, 30% stone text and borders, 10% orange.
+*/
+:root{
+  --bg:#0c0a09;            /* stone-950 */
+  --surface:#1c1917;       /* stone-900 */
+  --surface-2:#292524;     /* stone-800 */
+  --border:#292524;        /* stone-800 */
+  --text:#fafaf9;          /* stone-50 */
+  --muted:#a8a29e;         /* stone-400 */
+  --subtle:#78716c;        /* stone-500 */
+  --accent:#f97316;        /* orange-500 */
+  --accent-hi:#fb923c;     /* orange-400 */
+  --accent-lo:#c2410c;     /* orange-700 */
+  --glow:rgba(249,115,22,.18);
+  --r-md:.375rem; --r-lg:.5rem; --r-xl:.75rem; --r-2xl:1rem;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --max:72rem;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font:400 1rem/1.625 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent-hi);outline-offset:3px;border-radius:var(--r-md)}
+.wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-inline:1.5rem}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:1rem;top:-4rem;background:var(--accent);color:#1c0a00;padding:.5rem 1rem;border-radius:var(--r-md);font-weight:600;z-index:100}
+.skip:focus{top:1rem}
+
+/* Type */
+.eyebrow{font-size:.75rem;line-height:1rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-hi)}
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-.025em;line-height:1.05}
+h1{font-size:clamp(3rem,8vw,6rem)}
+h2{font-size:clamp(2.25rem,5vw,3.75rem)}
+h3{font-size:1.5rem;line-height:1.2;letter-spacing:-.015em}
+em{font-style:italic;font-weight:400;color:var(--accent-hi)}
+.lead{font-size:1.125rem;color:var(--muted);max-width:34rem}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.5rem;font:600 .9375rem/1 var(--sans);padding:.9rem 1.4rem;border-radius:var(--r-lg);border:1px solid transparent;cursor:pointer;transition:transform .15s ease-out,background-color .15s ease-out,border-color .15s ease-out,box-shadow .2s ease-out}
+.btn-primary{background:var(--accent);color:#1c0a00;box-shadow:0 8px 32px -8px rgba(249,115,22,.55)}
+.btn-primary:hover{background:var(--accent-hi);transform:translateY(-1px);box-shadow:0 12px 40px -8px rgba(249,115,22,.7)}
+.btn-ghost{border-color:var(--surface-2);color:var(--text)}
+.btn-ghost:hover{border-color:var(--subtle);background:var(--surface)}
+
+/* Nav */
+header.nav{position:fixed;inset:0 0 auto 0;z-index:50;transition:background-color .3s,border-color .3s,backdrop-filter .3s;border-bottom:1px solid transparent}
+header.nav.scrolled{background:rgba(12,10,9,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:var(--border)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:4.5rem}
+.logo{display:flex;align-items:center;gap:.625rem;font:600 1.375rem/1 var(--serif);letter-spacing:-.02em}
+.nav ul{display:flex;gap:2rem;list-style:none;padding:0}
+.nav ul a{font-size:.9375rem;color:var(--muted);transition:color .15s}
+.nav ul a:hover{color:var(--text)}
+@media(max-width:720px){.nav ul{display:none}}
+
+/* Hero */
+.hero{position:relative;min-height:100svh;display:grid;align-items:center;padding:8rem 0 5rem;isolation:isolate;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:auto -20% -35% -20%;height:75%;background:radial-gradient(ellipse at 50% 100%,rgba(234,88,12,.42),rgba(249,115,22,.14) 40%,transparent 70%);z-index:-2;animation:breathe 6s ease-in-out infinite}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.04),transparent 40%);z-index:-2}
+#embers{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
+.hero h1{margin:1.25rem 0 1.75rem}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:2.25rem}
+.hero-bottle{position:relative;display:grid;place-items:center}
+.hero-bottle svg{width:min(100%,15rem);height:auto;filter:drop-shadow(0 40px 60px rgba(249,115,22,.25));animation:float 7s ease-in-out infinite}
+.hero-bottle::before{content:"";position:absolute;width:80%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 65%)}
+.scroll-hint{position:absolute;bottom:1.75rem;left:50%;translate:-50% 0;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--subtle);display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.scroll-hint span{width:1px;height:2.5rem;background:linear-gradient(var(--subtle),transparent);animation:drip 2s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.7;transform:scale(1.04)}}
+@keyframes float{50%{transform:translateY(-12px) rotate(1deg)}}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr}.hero-bottle{order:-1}.hero-bottle svg{width:11rem}.hero{padding-top:6.5rem}.scroll-hint{display:none}}
+
+/* Marquee */
+.marquee{border-block:1px solid var(--border);background:var(--surface);overflow:hidden;padding:1.1rem 0}
+.marquee-track{display:flex;gap:3rem;width:max-content;animation:scroll 38s linear infinite;font:italic 400 1.5rem/1 var(--serif);color:var(--muted)}
+.marquee-track span{display:flex;align-items:center;gap:3rem;white-space:nowrap}
+.marquee-track i{color:var(--accent);font-style:normal;font-size:1rem}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+/* Sections */
+section{padding:7rem 0}
+.sec-head{max-width:40rem;margin-bottom:4rem}
+.sec-head h2{margin:1rem 0 1.25rem}
+
+/* Product cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);padding:2rem;overflow:hidden;transition:transform .3s ease-out,border-color .3s,box-shadow .3s;display:flex;flex-direction:column}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--tint,var(--glow)),transparent 60%);opacity:.7;transition:opacity .3s;pointer-events:none}
+.card:hover{transform:translateY(-6px);border-color:rgba(249,115,22,.45);box-shadow:0 24px 60px -24px rgba(249,115,22,.35)}
+.card:hover::before{opacity:1}
+.card.featured{border-color:rgba(249,115,22,.35)}
+.card .bottle{position:relative;display:grid;place-items:center;height:13rem;margin-bottom:1.5rem}
+.card .bottle svg{height:100%;width:auto;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.card:hover .bottle svg{transform:translateY(-6px) rotate(-3deg) scale(1.04)}
+.tag{position:absolute;top:1.25rem;right:1.25rem;font-size:.6875rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;background:var(--accent);color:#1c0a00;padding:.3rem .65rem;border-radius:999px}
+.card p{color:var(--muted);margin:.75rem 0 1.5rem;font-size:.9375rem}
+.meta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:1.25rem;border-top:1px solid var(--surface-2)}
+.heat{display:flex;gap:.3rem;align-items:center}
+.heat i{width:.625rem;height:.625rem;border-radius:50%;background:var(--surface-2);display:block}
+.heat i.on{background:var(--accent);box-shadow:0 0 10px rgba(249,115,22,.7)}
+.heat small{font-size:.75rem;color:var(--subtle);margin-left:.5rem}
+.price{font:600 1.125rem/1 var(--serif);font-variant-numeric:tabular-nums}
+@media(max-width:900px){.cards{grid-template-columns:1fr}.card .bottle{height:11rem}}
+
+/* Process */
+.process{background:var(--surface);border-block:1px solid var(--border)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;counter-reset:s}
+.step{padding:0 2.5rem;border-left:1px solid var(--surface-2);counter-increment:s}
+.step:first-child{padding-left:0;border-left:0}
+.step::before{content:"0" counter(s);display:block;font:italic 400 4.5rem/1 var(--serif);color:transparent;-webkit-text-stroke:1px var(--accent-lo);margin-bottom:1.5rem}
+.step p{color:var(--muted);margin-top:.75rem;font-size:.9375rem}
+@media(max-width:860px){.steps{grid-template-columns:1fr;gap:3rem}.step{padding:0;border:0}}
+
+/* Picker */
+.picker{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-2xl);padding:2.25rem;position:relative;overflow:hidden}
+.panel::after{content:"";position:absolute;inset:auto -30% -60% -30%;height:80%;background:radial-gradient(ellipse at 50% 100%,var(--glow),transparent 70%);pointer-events:none;opacity:var(--heat-o,.4);transition:opacity .4s}
+.panel label{display:block;font-weight:600;margin-bottom:1.5rem}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:.5rem;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--p,50%),var(--surface-2) var(--p,50%));cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:1.75rem;height:1.75rem;border-radius:50%;background:var(--text);border:4px solid var(--accent);box-shadow:0 0 0 6px rgba(249,115,22,.2);transition:box-shadow .15s}
+input[type=range]::-moz-range-thumb{width:1.75rem;height:1.75rem;border-radius:50%;background:var(--text);border:4px solid var(--accent);box-shadow:0 0 0 6px rgba(249,115,22,.2)}
+input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 10px rgba(249,115,22,.25)}
+.scale{display:flex;justify-content:space-between;margin-top:.9rem;font-size:.75rem;color:var(--subtle)}
+.result{margin-top:2.25rem;padding-top:2rem;border-top:1px solid var(--surface-2);min-height:9.5rem;position:relative;z-index:1}
+.result h3{font-size:2rem;margin:.5rem 0}
+.result p{color:var(--muted);font-size:.9375rem}
+.result .pair{margin-top:1rem;font-size:.875rem;color:var(--text)}
+.result .pair b{color:var(--accent-hi);font-weight:600}
+@media(max-width:860px){.picker{grid-template-columns:1fr;gap:2.5rem}}
+
+/* Quote */
+.quote{text-align:center;padding:8rem 0}
+.quote blockquote{font:italic 400 clamp(1.75rem,4vw,3rem)/1.2 var(--serif);letter-spacing:-.02em;max-width:52rem;margin:1.5rem auto 0}
+.quote blockquote strong{font-style:normal;font-weight:600;color:var(--accent-hi)}
+
+/* CTA */
+.cta{position:relative;isolation:isolate;overflow:hidden;border-top:1px solid var(--border);text-align:center}
+.cta::before{content:"";position:absolute;inset:auto -10% -50% -10%;height:100%;background:radial-gradient(ellipse at 50% 100%,rgba(234,88,12,.35),transparent 65%);z-index:-1}
+.cta h2{margin:1rem auto 1.25rem;max-width:44rem}
+.cta .lead{margin-inline:auto}
+form.sub{display:flex;gap:.75rem;max-width:30rem;margin:2.5rem auto 0;flex-wrap:wrap}
+form.sub input{flex:1 1 14rem;min-width:0;background:var(--surface);border:1px solid var(--surface-2);color:var(--text);font:400 1rem var(--sans);padding:.9rem 1.1rem;border-radius:var(--r-lg);transition:border-color .15s,box-shadow .15s}
+form.sub input::placeholder{color:var(--subtle)}
+form.sub input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(249,115,22,.18)}
+.hint{font-size:.8125rem;color:var(--subtle);margin-top:1rem;min-height:1.3rem}
+.hint.ok{color:var(--accent-hi)}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:2.5rem 0;font-size:.875rem;color:var(--subtle)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center}
+
+/* Reveal (only when JS is on, so content never stays hidden) */
+.js .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease-out,transform .7s ease-out;transition-delay:var(--d,0s)}
+.js .reveal.in{opacity:1;transform:none}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .js .reveal{opacity:1;transform:none}
+  #embers{display:none}
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#sauces">Aller au contenu</a>
+
+<!-- Bottle, reused everywhere. Colors come from CSS custom properties set on each <svg>. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="glass" x1="0" x2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".16"/>
+      <stop offset=".35" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </linearGradient>
+    <symbol id="bottle-braise" viewBox="0 0 120 280">
+      <rect x="46" y="4" width="28" height="30" rx="5" fill="#0c0a09" stroke="#44403c"/>
+      <rect x="40" y="30" width="40" height="14" rx="3" fill="#1c1917" stroke="#44403c"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="var(--liquid,#ea580c)"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="url(#glass)"/>
+      <rect x="22" y="130" width="76" height="104" rx="6" fill="#fafaf9"/>
+      <path d="M60 146c1.500 7 10 11 10 20a10 10 0 0 1-20 0c0-4 3-7 4.500-10 .5 3 2 4 3.500 4-.5-5 .5-9 2-14z" fill="var(--liquid,#ea580c)"/>
+      <text x="60" y="194" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-weight="600" font-size="17" letter-spacing="1" fill="#1c1917">EMBER</text>
+      <rect x="34" y="202" width="52" height="1.500" fill="#1c1917" opacity=".5"/>
+      <text x="60" y="219" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="7.500" letter-spacing="2" fill="#1c1917">
+        BRAISE
+      </text>
+    </symbol>
+    <symbol id="bottle-flamme" viewBox="0 0 120 280">
+      <rect x="46" y="4" width="28" height="30" rx="5" fill="#0c0a09" stroke="#44403c"/>
+      <rect x="40" y="30" width="40" height="14" rx="3" fill="#1c1917" stroke="#44403c"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="var(--liquid,#ea580c)"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="url(#glass)"/>
+      <rect x="22" y="130" width="76" height="104" rx="6" fill="#fafaf9"/>
+      <path d="M60 146c1.500 7 10 11 10 20a10 10 0 0 1-20 0c0-4 3-7 4.500-10 .5 3 2 4 3.500 4-.5-5 .5-9 2-14z" fill="var(--liquid,#ea580c)"/>
+      <text x="60" y="194" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-weight="600" font-size="17" letter-spacing="1" fill="#1c1917">EMBER</text>
+      <rect x="34" y="202" width="52" height="1.500" fill="#1c1917" opacity=".5"/>
+      <text x="60" y="219" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="7.500" letter-spacing="2" fill="#1c1917">
+        FLAMME
+      </text>
+    </symbol>
+    <symbol id="bottle-brasier" viewBox="0 0 120 280">
+      <rect x="46" y="4" width="28" height="30" rx="5" fill="#0c0a09" stroke="#44403c"/>
+      <rect x="40" y="30" width="40" height="14" rx="3" fill="#1c1917" stroke="#44403c"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="var(--liquid,#ea580c)"/>
+      <path d="M42 44h36c0 24 26 36 26 78v128a22 22 0 0 1-22 22H38a22 22 0 0 1-22-22V122c0-42 26-54 26-78z" fill="url(#glass)"/>
+      <rect x="22" y="130" width="76" height="104" rx="6" fill="#fafaf9"/>
+      <path d="M60 146c1.500 7 10 11 10 20a10 10 0 0 1-20 0c0-4 3-7 4.500-10 .5 3 2 4 3.500 4-.5-5 .5-9 2-14z" fill="var(--liquid,#ea580c)"/>
+      <text x="60" y="194" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-weight="600" font-size="17" letter-spacing="1" fill="#1c1917">EMBER</text>
+      <rect x="34" y="202" width="52" height="1.500" fill="#1c1917" opacity=".5"/>
+      <text x="60" y="219" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="7.500" letter-spacing="2" fill="#1c1917">
+        BRASIER
+      </text>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="logo" aria-label="Ember, retour en haut">
+      <svg width="22" height="26" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2c1 6 8 9 8 16a8 8 0 0 1-16 0c0-3.500 2-6 3.500-8 .5 2.500 2 3.500 3 3.500C14 10 15 6 16 2z" fill="#f97316"/></svg>
+      Ember
+    </a>
+    <nav aria-label="Navigation principale">
+      <ul>
+        <li><a href="#sauces">Les sauces</a></li>
+        <li><a href="#savoir-faire">Le feu</a></li>
+        <li><a href="#trouver">Trouver ma sauce</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-ghost" href="#liste" style="padding:.65rem 1.1rem">Rejoindre la liste</a>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero" style="padding-block:8rem 5rem">
+    <canvas id="embers" aria-hidden="true"></canvas>
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow reveal">Sauces piquantes fumées</p>
+        <h1 class="reveal" style="--d:.08s">Le feu,<br>mais avec <em>du goût.</em></h1>
+        <p class="lead reveal" style="--d:.16s">Des piments fumés lentement sur braise, fermentés, puis mixés avec soin. Trois sauces, cinq niveaux de feu, aucune douleur gratuite.</p>
+        <div class="hero-cta reveal" style="--d:.24s">
+          <a href="#sauces" class="btn btn-primary">Découvrir les sauces
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a href="#trouver" class="btn btn-ghost">Trouver ma sauce</a>
+        </div>
+      </div>
+      <div class="hero-bottle reveal" style="--d:.2s">
+        <svg viewBox="0 0 120 280" role="img" aria-label="Bouteille de sauce Ember Brasier" style="--liquid:#dc2626"><use href="#bottle-brasier"/></svg>
+      </div>
+    </div>
+    <div class="scroll-hint" aria-hidden="true">Défiler<span></span></div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Fumé sur braise <i>●</i> Fermenté lentement <i>●</i> Petites fournées <i>●</i> Zéro arôme artificiel <i>●</i> Fait pour la table <i>●</i></span>
+      <span>Fumé sur braise <i>●</i> Fermenté lentement <i>●</i> Petites fournées <i>●</i> Zéro arôme artificiel <i>●</i> Fait pour la table <i>●</i></span>
+    </div>
+  </div>
+
+  <!-- SAUCES -->
+  <section id="sauces">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow reveal">La gamme</p>
+        <h2 class="reveal" style="--d:.06s">Trois sauces, <em>une seule braise.</em></h2>
+        <p class="lead reveal" style="--d:.12s">Chacune a son caractère. Toutes laissent le goût passer avant le feu.</p>
+      </div>
+
+      <div class="cards">
+        <article class="card reveal" style="--tint:rgba(251,191,36,.14)">
+          <div class="bottle"><svg viewBox="0 0 120 280" style="--liquid:#d97706" role="img" aria-label="Bouteille Braise"><use href="#bottle-braise"/></svg></div>
+          <h3>Braise</h3>
+          <p>Piment fumé, pêche grillée et une pointe de miel. La sauce qu'on met partout, même sur un œuf du dimanche.</p>
+          <div class="meta">
+            <div class="heat" role="img" aria-label="Piquant : 2 sur 5"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><small>Doux</small></div>
+            <span class="price">9,50 €</span>
+          </div>
+        </article>
+
+        <article class="card featured reveal" style="--d:.1s;--tint:rgba(249,115,22,.2)">
+          <span class="tag">Préférée</span>
+          <div class="bottle"><svg viewBox="0 0 120 280" style="--liquid:#ea580c" role="img" aria-label="Bouteille Flamme"><use href="#bottle-flamme"/></svg></div>
+          <h3>Flamme</h3>
+          <p>Chipotle, ail noir et citron vert brûlé. Un feu franc qui monte doucement et s'arrête avant de gêner.</p>
+          <div class="meta">
+            <div class="heat" role="img" aria-label="Piquant : 3 sur 5"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><small>Franc</small></div>
+            <span class="price">9,50 €</span>
+          </div>
+        </article>
+
+        <article class="card reveal" style="--d:.2s;--tint:rgba(220,38,38,.18)">
+          <div class="bottle"><svg viewBox="0 0 120 280" style="--liquid:#dc2626" role="img" aria-label="Bouteille Brasier"><use href="#bottle-brasier"/></svg></div>
+          <h3>Brasier</h3>
+          <p>Habanero fumé, mangue noircie, poivre long. Pour celles et ceux qui aiment qu'on leur réponde.</p>
+          <div class="meta">
+            <div class="heat" role="img" aria-label="Piquant : 5 sur 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><small>Brûlant</small></div>
+            <span class="price">10,50 €</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="savoir-faire" class="process">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow reveal">Le savoir-faire</p>
+        <h2 class="reveal" style="--d:.06s">De la braise <em>à la bouteille.</em></h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <h3>Fumer</h3>
+          <p>Les piments passent des heures au-dessus d'un feu de bois doux. C'est là que naît le côté sucré et profond.</p>
+        </div>
+        <div class="step reveal" style="--d:.1s">
+          <h3>Fermenter</h3>
+          <p>Quelques semaines en cuve, à leur rythme. Le feu s'arrondit, l'acidité se pose, les saveurs se rejoignent.</p>
+        </div>
+        <div class="step reveal" style="--d:.2s">
+          <h3>Mixer</h3>
+          <p>On goûte, on ajuste, on goûte encore. Une petite fournée à la fois, jusqu'à ce que l'équilibre soit juste.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PICKER -->
+  <section id="trouver">
+    <div class="wrap picker">
+      <div>
+        <p class="eyebrow reveal">Trouver ma sauce</p>
+        <h2 class="reveal" style="--d:.06s" >À quel point <em>tu aimes ça ?</em></h2>
+        <p class="lead reveal" style="--d:.12s;margin-top:1.25rem">Déplace le curseur. On te dit quelle bouteille mettre sur la table.</p>
+      </div>
+      <div class="panel reveal" style="--d:.1s" id="panel">
+        <label for="heat">Ma tolérance au piquant</label>
+        <input type="range" id="heat" min="1" max="5" step="1" value="3" aria-describedby="result">
+        <div class="scale" aria-hidden="true"><span>Je goûte</span><span>Ça va</span><span>Franc</span><span>Costaud</span><span>Sans pitié</span></div>
+        <div class="result" id="result" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUOTE -->
+  <section class="quote">
+    <div class="wrap">
+      <p class="eyebrow reveal">Notre idée</p>
+      <blockquote class="reveal" style="--d:.08s">« Une bonne sauce piquante ne doit pas faire pleurer. Elle doit donner <strong>envie de reprendre une bouchée.</strong> »</blockquote>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="liste">
+    <div class="wrap">
+      <p class="eyebrow reveal">Première fournée</p>
+      <h2 class="reveal" style="--d:.06s">Sois prêt quand <em>ça chauffe.</em></h2>
+      <p class="lead reveal" style="--d:.12s">Laisse ton adresse e-mail. On te prévient à l'ouverture des précommandes, et pas avant.</p>
+      <form class="sub reveal" style="--d:.18s" id="form" novalidate>
+        <label class="sr-only" for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" placeholder="nom@exemple.be" autocomplete="email" required>
+        <button class="btn btn-primary" type="submit">Me prévenir</button>
+        <p class="hint" id="hint" style="width:100%" role="status">Page de démonstration : aucune adresse n'est enregistrée.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Ember. Concept fictif, produit imaginaire.</span>
+    <span>Conçu et publié avec Claude Code.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Nav background after a little scroll */
+  var nav = document.getElementById('nav');
+  var onScroll = function(){ nav.classList.toggle('scrolled', window.scrollY > 24); };
+  onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* Reveal on scroll */
+  var items = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, {threshold:.15, rootMargin:'0px 0px -6% 0px'});
+    items.forEach(function(el){ io.observe(el); });
+  } else { items.forEach(function(el){ el.classList.add('in'); }); }
+
+  /* Rising embers */
+  var cv = document.getElementById('embers');
+  if (cv && !reduce) {
+    var ctx = cv.getContext('2d'), W, H, dpr = Math.min(window.devicePixelRatio||1, 2), parts = [], raf, visible = true;
+    var resize = function(){
+      var r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+      cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    };
+    var spawn = function(initial){
+      return { x: Math.random()*W, y: initial ? Math.random()*H : H + 10,
+               r: Math.random()*2.2 + .6, vy: Math.random()*.55 + .2, vx: (Math.random()-.5)*.25,
+               ph: Math.random()*6.28, life: Math.random()*.6 + .4 };
+    };
+    var count = function(){ return Math.round(Math.min(90, Math.max(30, W/16))); };
+    var init = function(){ resize(); parts = []; for (var i=0;i<count();i++) parts.push(spawn(true)); };
+    var draw = function(t){
+      ctx.clearRect(0,0,W,H);
+      for (var i=0;i<parts.length;i++){
+        var p = parts[i];
+        p.y -= p.vy; p.x += p.vx + Math.sin(t/900 + p.ph)*.25;
+        var k = p.y / H;                       /* 1 at bottom, 0 at top */
+        var a = Math.max(0, Math.min(1, k*1.6)) * p.life * (.6 + .4*Math.sin(t/300 + p.ph));
+        var g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);
+        g.addColorStop(0,'rgba(253,186,116,'+a+')');
+        g.addColorStop(.4,'rgba(249,115,22,'+(a*.45)+')');
+        g.addColorStop(1,'rgba(249,115,22,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*5,0,6.283); ctx.fill();
+        if (p.y < -10 || p.x < -20 || p.x > W+20) parts[i] = spawn(false);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    init(); raf = requestAnimationFrame(draw);
+    window.addEventListener('resize', init);
+    /* Pause when off screen or tab hidden */
+    new IntersectionObserver(function(es){
+      visible = es[0].isIntersecting;
+      cancelAnimationFrame(raf); if (visible && !document.hidden) raf = requestAnimationFrame(draw);
+    }).observe(cv);
+    document.addEventListener('visibilitychange', function(){
+      cancelAnimationFrame(raf); if (!document.hidden && visible) raf = requestAnimationFrame(draw);
+    });
+  }
+
+  /* Heat picker */
+  var data = {
+    1:{n:'Braise', d:'Fumée, fruitée, très douce. Le bon point de départ pour apprivoiser le piment.', p:'Œufs brouillés, pizza, yaourt grec.', o:.25},
+    2:{n:'Braise', d:'Une chaleur tendre qui reste au second plan et laisse parler la pêche grillée.', p:'Poulet rôti, burger, frites au four.', o:.35},
+    3:{n:'Flamme', d:'Le feu franc et rond. Il monte, il s\'installe, il laisse le goût reprendre la main.', p:'Côtes grillées, tacos, bière ambrée.', o:.55},
+    4:{n:'Flamme', d:'Tu peux en mettre généreusement. Elle tient la route sur les plats les plus gras.', p:'Pulled pork, ramen, fromage fondu.', o:.75},
+    5:{n:'Brasier', d:'Habanero fumé, mangue noircie. Une vraie réponse, longue et sans détour.', p:'Viande fumée, wings, tout ce qui peut encaisser.', o:1}
+  };
+  var r = document.getElementById('heat'), out = document.getElementById('result'), panel = document.getElementById('panel');
+  var render = function(){
+    var v = +r.value, x = data[v];
+    r.style.setProperty('--p', ((v-1)/4*100) + '%');
+    panel.style.setProperty('--heat-o', x.o);
+    out.innerHTML = '<p class="eyebrow">Ta bouteille</p><h3>' + x.n + '</h3><p>' + x.d + '</p><p class="pair"><b>À table :</b> ' + x.p + '</p>';
+  };
+  r.addEventListener('input', render); render();
+
+  /* Email form (demo only, nothing is sent) */
+  var form = document.getElementById('form'), hint = document.getElementById('hint'), email = document.getElementById('email');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+    hint.classList.toggle('ok', ok);
+    hint.textContent = ok ? 'Merci ! Dans la vraie vie, on te préviendrait à l\'ouverture.' : 'L\'adresse doit contenir un @ et un domaine, par exemple nom@exemple.be.';
+    if (!ok) email.focus();
+  });
+})();
+</script>
+</body>
+</html>
